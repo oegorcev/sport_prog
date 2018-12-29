@@ -17,6 +17,9 @@
 #include <bitset>
 #include <cstdio>
 #include <numeric>
+#include <chrono>       // std::chrono::system_clock
+#include <unordered_map>
+#include <unordered_set>
 
 using namespace std;
 
@@ -41,7 +44,7 @@ template<typename T> inline void alert(vector<T> &t, char delim = ' ') { for (T 
 
 const int64 MAX64 = 1 + 1e+18;
 const int  MAX = 1 + 1e+9;
-const double PI = 3.1415926536;
+const double PI = acos(-1);;
 const int64 CEL = 26;
 const string NO = "NO";
 const string YES = "YES";
@@ -64,6 +67,77 @@ ostream& operator << (ostream& os, vector<T>& in)
 	return os;
 }
 
+/*
+степень двойки if ((i & (i - 1)) == 0)
+ceil(); - вверх floor(n + 0.5); - вниз
+*/
+
+int64 MID(int64 l, int64 r) { return (l + r) / 2; }
+int64 LSON(int64 u) { return u * 2; }
+int64 RSON(int64 u) { return u * 2 + 1; }
+
+struct SegmentTree
+{
+	SegmentTree(int64 size) : sum(size * 4) {}
+
+	void Set(int64 u, int64 sl, int64 sr, int64 position, int64 value)
+	{
+		if (sl == sr)
+		{
+			sum[u] = value;
+			return;
+		}
+
+		int64 mid = MID(sl, sr);
+		if (position <= mid) Set(LSON(u), sl, mid, position, value);
+		else
+		{
+			Set(RSON(u), mid + 1, sr, position, value);
+		}
+
+		sum[u] = sum[LSON(u)] + sum[RSON(u)];
+	}
+
+	int64 GetSum(int64 u, int64 sl, int64 sr, int64 l, int64 r)
+	{
+		if (sl == l && sr == r)
+		{
+			return sum[u];
+		}
+
+		int64 mid = MID(sl, sr);
+
+		if (r <= mid)
+		{
+			return GetSum(LSON(u), sl, mid, l, r);
+		}
+		else if (l > mid)
+		{
+			return GetSum(RSON(u), mid + 1, sr, l, r);
+		}
+		else
+		{
+			return GetSum(LSON(u), sl, mid, l, mid) + GetSum(RSON(u), mid + 1, sr, mid + 1, r);
+		}
+	}
+
+	vector<int64> sum;
+};
+
+
+bool isPrime(int64 digit)
+{
+	if (digit == 1) return false;
+
+
+	for (int64 i = 2; i <= sqrt(digit); ++i)
+	{
+		if (digit % i == 0) return false;
+	}
+
+	return true;
+}
+
 struct Point
 {
 	Point() {};
@@ -81,9 +155,9 @@ bool operator < (const Point& p1, const Point& p2)
 
 struct Node
 {
-	Node() : color(0) {}
-	int64 color;
-	Point prev;
+	Node() : color('w'), cnt(-1) {}
+	char color;
+	int64 cnt;
 	Edges_t edges;
 };
 
@@ -92,46 +166,93 @@ typedef vector<vector<Node>> Graph_tt;
 
 Graph_t graph;
 Graph_tt g;
+int64 answerG = 0;
 
 void Clear()
 {
 	forn(i, graph.size())
 	{
-		graph[i].color = 'w';
+		if (graph[i].color == 'g') graph[i].color = 'w';
 	}
 }
 
-void DFS(int64 u, int64 newColor)
+bool Can(int64 i, int64 j)
 {
-	graph[u].color = newColor;
-
-	for (int64 v : graph[u].edges)
-	{
-		DFS(v, newColor);
-	}
+	return false;
+	//	return i >= 0 && i < n  && j >= 0 && j < m;
 }
 
-// степень двойки if ((i & (i - 1)) == 0)
-// ceil(); - вверх floor(n + 0.5); - вниз
+
+int64 GCD(int64 a, int64 b)
+{
+	while (b)
+	{
+		a %= b;
+		swap(a, b);
+	}
+	return a;
+}
 
 /*Переменные*/
-
-
-
+int64 n, m, k, w;
+string s1, s2;
+int64 t1, t2;
 /*-----------*/
+
+void DFS(int64 u)
+{
+	graph[u].color = 'b';
+
+	for (int64 i : graph[u].edges)
+	{
+		if (graph[i].color == 'w')
+		{
+			DFS(i);
+		}
+	}
+}
+
+
 void Read()
 {
+	int64 n; scanf("%lld", &n);
 
+	vector<int64> vec(n);
+
+	for (int64 i = 0; i < n; ++i)
+	{
+		scanf("%lld", &vec[i]);
+	}
+
+	vector<int64> num(1e6 + 1);
+
+	for (int64 i = 0; i < n; ++i)
+	{
+		for (int64 j = 2; j <= sqrt(vec[i]); ++j)
+		{
+			if (vec[i] % j)
+			{
+				num[j]++;
+			}
+		}
+	}
+
+	for (int64 i = 1e6; i >= 0; ++i)
+	{
+		if (num[i] >= 2) alert(i);
+	}
+	
+	alert(1);
 }
 
 void Solve()
 {
 
+
 }
 
 void Print()
-{	
-
+{
 }
 
 #define TASKNAME "TASKNAME"
@@ -142,9 +263,7 @@ int main()
 	freopen("ReadMe.txt", "r", stdin);
 #else
 	{
-		ios_base::sync_with_stdio(false);
-		cin.tie(NULL);
-		cout.tie(0);
+
 		if (TASKNAME != "TASKNAME")
 		{
 			freopen(TASKNAME".in", "r", stdin);
@@ -161,6 +280,9 @@ int main()
 	Read();
 	Solve();
 	Print();
+
+
+
 
 	return 0;
 }
